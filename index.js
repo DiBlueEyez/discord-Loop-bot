@@ -45,4 +45,4 @@ client.on('messageCreate', (message) => {
 });
 
 // ดึง Token จากระบบ Cloud
-client.login(MTU1NzIwNjg4NzEzNTU4MDI5Mg.G3AYJn.LcVdRn28AbPhYygdtevoud7LBbYZle8F4lgOfI);
+client.login("MTU1NzIwNjg4NzEzNTU4MDI5Mg.G3AYJn.LcVdRn28AbPhYygdtevoud7LBbYZle8F4lgOfI");
