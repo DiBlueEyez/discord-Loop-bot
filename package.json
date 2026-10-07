@@ -1,6 +1,7 @@
 {
   "name": "discord-loop-bot",
   "version": "1.0.0",
+  "description": "Discord Loop Alert Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
