@@ -1,5 +1,34 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const express = require('express');
+const axios = require('axios');
 
+// ==========================================
+// 1. ระบบ WEB SERVER & SELF-PING FOR RENDER
+// ==========================================
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.send('Bot is running and awake 24/7!');
+});
+
+app.listen(PORT, () => {
+    console.log(`Web server listening on port ${PORT}`);
+});
+
+// Self-Ping ยิงสะกิดตัวเองทุกๆ 30 วินาที
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+if (RENDER_URL) {
+    setInterval(() => {
+        axios.get(RENDER_URL)
+            .then(() => console.log('Self-ping successful'))
+            .catch(err => console.error('Self-ping error:', err.message));
+    }, 30000); // 30,000 ms = 30 วินาที
+}
+
+// ==========================================
+// 2. โค้ด Discord Bot เดิมของคุณ
+// ==========================================
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
