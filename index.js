@@ -23,7 +23,7 @@ if (RENDER_URL) {
         axios.get(RENDER_URL)
             .then(() => console.log('Self-ping successful'))
             .catch(err => console.error('Self-ping error:', err.message));
-    }, 30000); // 30,000 ms = 30 วินาที
+    }, 30000);
 }
 
 // ==========================================
@@ -43,7 +43,7 @@ let scheduledAlerts = [];
 client.on('ready', () => {
     console.log(`บอทออนไลน์แล้วในชื่อ: ${client.user.tag}`);
 
-    // วนลูปตรวจเช็กเวลาทุกๆ 10 วินาที เพื่อดูว่าถึงเวลาแจ้งเตือนหรือยัง
+    // วนลูปตรวจเช็กเวลาทุกๆ 10 วินาที
     setInterval(() => {
         const now = new Date();
 
@@ -58,21 +58,111 @@ client.on('ready', () => {
                 alert.channel.send(`🔔 **แจ้งเตือน:** อีก 5 นาทีจะถึงเวลารอบถัดไปแล้ว! (${alert.targetTimeString} น.)`);
                 return false; // ลบออกจากรายการเมื่อแจ้งเตือนแล้ว
             }
-            return true; // เก็บรายการที่ยังไม่ถึงเวลาไว้ต่อไป
+            return true;
         });
-    }, 10000); // เช็กทุก 10 วินาที
+    }, 10000);
 });
 
 client.on('messageCreate', (message) => {
     if (message.author.bot) return;
 
-    // Regex ตรวจจับรูปแบบเวลา เช่น 10.00 หรือ 10:00
-    const timeRegex = /^([0-1]?[0-9]|2[0-3])[.:]([0-5][0-9])$/;
-    const match = message.content.trim().match(timeRegex);
+    const content = message.content.trim();
 
-    if (match) {
-        let hours = parseInt(match[1]);
-        let minutes = parseInt(match[2]);
+    // ==========================================
+    // ลูปสายไฟ (เริ่มต้นด้วย E หรือ e)
+    // ==========================================
+    const wireRegex = /^[Ee]([0-1]?[0-9]|2[0-3])[.:]([0-5][0-9])$/;
+    const wireMatch = content.match(wireRegex);
+
+    if (wireMatch) {
+        let startH = parseInt(wireMatch[1]);
+        let startM = parseInt(wireMatch[2]);
+
+        // คำนวณช่วงเวลา (แปลงเวลาเป็นจำนวนนาทีรวมเพื่อเปรียบเทียบง่ายขึ้น)
+        const totalStartMin = startH * 60 + startM;
+        const dayShiftStart = 6 * 60;       // 06:00 (360 นาที)
+        const dayShiftEnd = 17 * 60 + 59;   // 17:59 (1079 นาที)
+
+        const isDayShift = totalStartMin >= dayShiftStart && totalStartMin <= dayShiftEnd;
+
+        let loops = [];
+        let curH = startH;
+        let curM = startM;
+
+        while (true) {
+            // บวกเวลาไป 1 ชั่วโมง 35 นาที
+            curH += 1;
+            curM += 35;
+
+            if (curM >= 60) {
+                curH += 1;
+                curM -= 60;
+            }
+            if (curH >= 24) {
+                curH -= 24;
+            }
+
+            const curTotalMin = curH * 60 + curM;
+
+            // ตรวจสอบขอบเขตเวลาช่วงกะ
+            if (isDayShift) {
+                // ช่วง 06:00 - 17:59
+                if (curTotalMin < dayShiftStart || curTotalMin > dayShiftEnd) break;
+            } else {
+                // ช่วง 18:00 - 05:59 (ข้ามคืน)
+                if (curTotalMin >= dayShiftStart && curTotalMin <= dayShiftEnd) break;
+            }
+
+            const formattedH = String(curH).padStart(2, '0');
+            const formattedM = String(curM).padStart(2, '0');
+            loops.push(`${formattedH}.${formattedM}`);
+        }
+
+        if (loops.length === 0) {
+            message.channel.send(`⚠️ ไม่สามารถสร้างลูปสายไฟได้เนื่องจากเวลาที่ใส่ไม่อยู่ในเงื่อนไข หรือเกินช่วงเวลากะครับ`);
+            return;
+        }
+
+        // ตั้งเตือนล่วงหน้า 5 นาที สำหรับลูปแรกสุดในรายการ
+        const [firstH, firstM] = loops[0].split('.').map(Number);
+        let alertH = firstH;
+        let alertM = firstM - 5;
+
+        if (alertM < 0) {
+            alertM += 60;
+            alertH -= 1;
+            if (alertH < 0) alertH += 24;
+        }
+
+        scheduledAlerts.push({
+            channel: message.channel,
+            targetTimeString: loops[0],
+            alertHour: alertH,
+            alertMinute: alertM
+        });
+
+        const formattedAlertH = String(alertH).padStart(2, '0');
+        const formattedAlertM = String(alertM).padStart(2, '0');
+
+        // จัดรูปแบบข้อความแสดงรายการลูปสายไฟ
+        let loopListText = loops.map((time, index) => `${index + 1}. ${time} น.`).join('\n');
+
+        message.channel.send(
+            `⚡ **รายการเวลาของลูปสายไฟถัดไป:**\n${loopListText}\n\n` +
+            `🔔 **ตั้งเวลาเตือน:** บอทจะแจ้งเตือนตอน ${formattedAlertH}.${formattedAlertM} น. (ล่วงหน้า 5 นาทีสำหรับรอบแรก)`
+        );
+        return;
+    }
+
+    // ==========================================
+    // ลูปน้ำมัน (คำสั่งเดิม)
+    // ==========================================
+    const oilRegex = /^([0-1]?[0-9]|2[0-3])[.:]([0-5][0-9])$/;
+    const oilMatch = content.match(oilRegex);
+
+    if (oilMatch) {
+        let hours = parseInt(oilMatch[1]);
+        let minutes = parseInt(oilMatch[2]);
 
         // 1. คำนวณเวลาลูปถัดไป (+1 ชั่วโมง 30 นาที)
         let targetHours = hours + 1;
@@ -90,7 +180,7 @@ client.on('messageCreate', (message) => {
         const formattedTargetMinutes = String(targetMinutes).padStart(2, '0');
         const targetTimeString = `${formattedTargetHours}.${formattedTargetMinutes}`;
 
-        // 2. คำนวณเวลาแจ้งเตือนล่วงหน้า 5 นาที (ลบออก 5 นาทีจากเวลาเป้าหมาย)
+        // 2. คำนวณเวลาแจ้งเตือนล่วงหน้า 5 นาที
         let alertHours = targetHours;
         let alertMinutes = targetMinutes - 5;
 
@@ -113,9 +203,9 @@ client.on('messageCreate', (message) => {
         const formattedAlertHours = String(alertHours).padStart(2, '0');
         const formattedAlertMinutes = String(alertMinutes).padStart(2, '0');
 
-        // ตอบกลับตั้งค่าลูปสำเร็จ
+        // ตอบกลับตั้งค่าลูปน้ำมันสำเร็จ
         message.channel.send(
-            `⏰ **ลูปถัดไป:** ${targetTimeString} น.\n` +
+            `⏰ **ลูปถัดไป (น้ำมัน):** ${targetTimeString} น.\n` +
             `🔔 **ตั้งเวลาเตือน:** บอทจะแจ้งเตือนตอน ${formattedAlertHours}.${formattedAlertMinutes} น. (ล่วงหน้า 5 นาที)`
         );
     }
