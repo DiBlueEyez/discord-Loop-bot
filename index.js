@@ -69,7 +69,53 @@ client.on('messageCreate', (message) => {
     const content = message.content.trim();
 
     // ==========================================
-    // ลูปสายไฟ (เริ่มต้นด้วย E หรือ e)
+    // 3.1 ลูปสัตว์ในตำนาน (ขึ้นต้นด้วย Z หรือ z ตามด้วยตัวแปรสัตว์)
+    // ==========================================
+    const legendRegex = /^[Zz](MOO|BEE|IK|IS|CT|MEE|BI|JING)\s*([0-1]?[0-9]|2[0-3])[.:]([0-5][0-9])$/i;
+    const legendMatch = content.match(legendRegex);
+
+    if (legendMatch) {
+        const animalCode = legendMatch[1].toUpperCase();
+        let hours = parseInt(legendMatch[2]);
+        let minutes = parseInt(legendMatch[3]);
+
+        // กำหนดชื่อสัตว์ตามตัวแปรทั้ง 8 ชนิด
+        const animalNames = {
+            "MOO": "หมูป่า Owiza",
+            "BEE": "บีเว่อร์ Moon",
+            "IK": "จระเข้ SUN",
+            "IS": "เสือแพนเธอร์ Ghost",
+            "CT": "โคโยตี MIdnightPAW",
+            "MEE": "หมี Owiza",
+            "BI": "ไบซัน Winyan",
+            "JING": "จิ้งจอก OTA"
+        };
+
+        const animalName = animalNames[animalCode];
+
+        // คำนวณเวลาถัดไป (+1 ชั่วโมง 30 นาที)
+        let targetHours = hours + 1;
+        let targetMinutes = minutes + 30;
+
+        if (targetMinutes >= 60) {
+            targetHours += 1;
+            targetMinutes -= 60;
+        }
+        if (targetHours >= 24) {
+            targetHours -= 24;
+        }
+
+        const formattedTargetHours = String(targetHours).padStart(2, '0');
+        const formattedTargetMinutes = String(targetMinutes).padStart(2, '0');
+        const targetTimeString = `${formattedTargetHours}.${formattedTargetMinutes}`;
+
+        // แสดงผลลัพธ์ตามรูปแบบที่ต้องการ (ไม่มีการตั้งเตือน 5 นาที)
+        message.channel.send(`เวลาตั้งต่อไปของสัตว์ชนิดนี้ (${animalName}) = ${targetTimeString}`);
+        return;
+    }
+
+    // ==========================================
+    // 3.2 ลูปสายไฟ (เริ่มต้นด้วย E หรือ e)
     // ==========================================
     const wireRegex = /^[Ee]([0-1]?[0-9]|2[0-3])[.:]([0-5][0-9])$/;
     const wireMatch = content.match(wireRegex);
@@ -80,8 +126,8 @@ client.on('messageCreate', (message) => {
 
         // คำนวณช่วงเวลา (แปลงเวลาเป็นจำนวนนาทีรวมเพื่อเปรียบเทียบง่ายขึ้น)
         const totalStartMin = startH * 60 + startM;
-        const dayShiftStart = 6 * 60;       // 06:00 (360 นาที)
-        const dayShiftEnd = 17 * 60 + 59;   // 17:59 (1079 นาที)
+        const dayShiftStart = 6 * 60;        // 06:00 (360 นาที)
+        const dayShiftEnd = 17 * 60 + 59;    // 17:59 (1079 นาที)
 
         const isDayShift = totalStartMin >= dayShiftStart && totalStartMin <= dayShiftEnd;
 
@@ -155,7 +201,7 @@ client.on('messageCreate', (message) => {
     }
 
     // ==========================================
-    // ลูปน้ำมัน (คำสั่งเดิม)
+    // 3.3 ลูปน้ำมัน (คำสั่งเดิม)
     // ==========================================
     const oilRegex = /^([0-1]?[0-9]|2[0-3])[.:]([0-5][0-9])$/;
     const oilMatch = content.match(oilRegex);
