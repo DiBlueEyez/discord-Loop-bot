@@ -265,8 +265,9 @@ process.on('unhandledRejection', error => {
 client.on('error', error => {
     console.error('Discord client error:', error);
 });
-
+console.log('Token status:', process.env.DISCORD_TOKEN ? `Loaded (Length: ${process.env.DISCORD_TOKEN.length})` : 'NOT FOUND');
 client.login(process.env.DISCORD_TOKEN)
     .then(() => console.log('Login function executed successfully'))
     .catch(err => console.error('Failed to login to Discord:', err));
+
 
