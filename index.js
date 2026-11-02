@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
     res.send('Bot is running and awake 24/7!');
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Web server listening on port ${PORT}`);
 });
 
@@ -269,6 +269,7 @@ console.log('Token status:', process.env.DISCORD_TOKEN ? `Loaded (Length: ${proc
 client.login(process.env.DISCORD_TOKEN)
     .then(() => console.log('Login function executed successfully'))
     .catch(err => console.error('Failed to login to Discord:', err));
+
 
 
 
