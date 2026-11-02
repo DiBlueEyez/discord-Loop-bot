@@ -6,7 +6,7 @@ const axios = require('axios');
 // 1. ระบบ WEB SERVER & SELF-PING FOR RENDER
 // ==========================================
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
     res.send('Bot is running and awake 24/7!');
@@ -269,5 +269,6 @@ console.log('Token status:', process.env.DISCORD_TOKEN ? `Loaded (Length: ${proc
 client.login(process.env.DISCORD_TOKEN)
     .then(() => console.log('Login function executed successfully'))
     .catch(err => console.error('Failed to login to Discord:', err));
+
 
 
