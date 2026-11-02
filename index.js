@@ -257,5 +257,16 @@ client.on('messageCreate', (message) => {
     }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+// ดักจับ Error ที่ไม่ได้จัดการ เพื่อดูว่าติดปัญหาอะไร
+process.on('unhandledRejection', error => {
+    console.error('Unhandled promise rejection:', error);
+});
+
+client.on('error', error => {
+    console.error('Discord client error:', error);
+});
+
+client.login(process.env.DISCORD_TOKEN)
+    .then(() => console.log('Login function executed successfully'))
+    .catch(err => console.error('Failed to login to Discord:', err));
 
